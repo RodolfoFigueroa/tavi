@@ -22,3 +22,7 @@ dev = [
 
 [tool.uv.sources]
 lyra-api = { git = "https://github.com/RodolfoFigueroa/lyra-api" }
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["D", "COM812"]
