@@ -1,0 +1,46 @@
+{
+    "fetch_temperatures": {
+        "details": "Use this tool when the user asks about heat, temperature, urban heat islands, or thermal conditions. Returns the average daytime land surface temperature (degrees Celsius) for each census tract, derived from satellite imagery.",
+        "table_description": "Average daytime land surface temperature (degrees Celsius) per census tract. Derived from satellite imagery for summer 2025.",
+        "column_name": "temperature_celsius",
+        "columns": {
+            "cvegeo": "Census tract code (VARCHAR).",
+            "temperature_celsius": "Average daytime land surface temperature in degrees Celsius (FLOAT)."
+        },
+        "endpoint": "temperature",
+        "extra_args": {
+            "year": {
+                "type": "int",
+                "description": "Year to fetch data for.",
+                "values": [2020, 2021, 2022, 2023, 2024, 2025]
+            },
+            "season": {
+                "type": "str",
+                "description": "Season to fetch data for.",
+                "values": ["spring", "summer", "autumn", "winter"]
+            }
+        }
+    },
+    "fetch_tree_coverage": {
+        "details": "Use this tool when the user asks about greenery, vegetation, tree cover, canopy, or urban forests. Returns the percentage of land area covered by tree canopy for each census tract, derived from high-resolution aerial imagery.",
+        "table_description": "Tree canopy coverage per census tract. Derived from high-resolution aerial imagery.",
+        "column_name": "area_m2",
+        "columns": {
+            "cvegeo": "Census tract code (VARCHAR).",
+            "area_m2": "Tree canopy coverage in square meters (FLOAT).",
+            "area_frac": "Tree canopy coverage as a fraction of land area of the census tract (FLOAT)."
+        },
+        "endpoint": "tree_coverage",
+        "add_area": true
+    },
+    "fetch_accessibility": {
+        "details": "Use this tool when the user asks about accessibility, walkability, or proximity to amenities. Returns an accessibility score for each census tract, calculated based on the number of key amenities (e.g., parks, schools, hospitals) within a certain distance.",
+        "table_description": "Accessibility scores per census tract. Calculated based on proximity to key amenities.",
+        "column_name": "accessibility_score",
+        "columns": {
+            "cvegeo": "Census tract code (VARCHAR).",
+            "accessibility_score": "Accessibility score (FLOAT). Ranges from 0 to 1. Higher scores indicate better accessibility to amenities."
+        },
+        "endpoint": "accessibility_services"
+    }
+}

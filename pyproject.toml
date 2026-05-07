@@ -12,12 +12,15 @@ dependencies = [
     "langgraph>=1.1.10",
     "lyra-api",
     "pandas>=3.0.2",
+    "psycopg2>=2.9.12",
     "python-dotenv>=1.2.2",
+    "sqlalchemy>=2.0.49",
+    "tabulate>=0.10.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ipykernel>=7.2.0",
+    "ipykernel<7",
 ]
 
 [tool.uv.sources]
@@ -26,3 +29,10 @@ lyra-api = { git = "https://github.com/RodolfoFigueroa/lyra-api" }
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = ["D", "COM812"]
+
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tavi"]

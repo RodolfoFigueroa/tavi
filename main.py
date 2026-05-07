@@ -5,16 +5,57 @@ from tavi.workflow import app
 
 load_dotenv()
 
+
+def run_turn(
+    stream_inputs: dict,
+    config: dict,
+    seen_ids: set[str],
+) -> None:
+    for event in app.stream(stream_inputs, config=config, stream_mode="values"):  # ty:ignore[invalid-argument-type]
+        last_message = event["messages"][-1]
+        msg_id = getattr(last_message, "id", None)
+        if msg_id in seen_ids:
+            continue
+        if msg_id is not None:
+            seen_ids.add(msg_id)
+        last_message.pretty_print()
+        area_names = [a["name"] for a in (event.get("areas") or [])]
+        print(  # noqa: T201
+            f"  [state] areas={area_names} | "
+            f"available_tables={event.get('available_tables')}"
+        )
+
+
 if __name__ == "__main__":
-    inputs = {
+    initial_inputs = {
         "messages": [
             HumanMessage(
-                content="Fetch the temperatures for Mexico City, then tell me the maximum temperature from that data."
+                content=(
+                    "Between Mexico City and Monterrey, which had more elderly "
+                    "population exposed to high temperatures (above 30C) in the "
+                    "summer of 2025?"
+                )
             )
-        ]
+        ],
+        "areas": [],
+        "available_tables": [],
+        "available_table_meta": {},
     }
 
-    # Stream the execution so you can see LangGraph working!
-    for event in app.stream(inputs, stream_mode="values"):
-        last_message = event["messages"][-1]
-        last_message.pretty_print()
+    config = {"configurable": {"thread_id": "session-001"}}
+    seen_ids: set[str] = set()
+
+    run_turn(initial_inputs, config, seen_ids)
+
+    while True:
+        try:
+            follow_up = input("\nAnything else? (press Enter to exit): ").strip()
+        except (EOFError, KeyboardInterrupt):
+            break
+        if not follow_up:
+            break
+        run_turn(
+            {"messages": [HumanMessage(content=follow_up)]},
+            config,
+            seen_ids,
+        )
