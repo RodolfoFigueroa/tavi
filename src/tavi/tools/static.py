@@ -12,6 +12,7 @@ _WRITE_OPS_RE = re.compile(
 _AREA_MAP: dict[str, str] = {
     "Mexico City": "09.1.01",
     "Monterrey": "19.1.01",
+    "Guadalajara": "14.1.01",
 }
 
 

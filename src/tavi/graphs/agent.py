@@ -77,7 +77,15 @@ def render_system_prompt(
             col_lines = "\n".join(
                 f"* `{col}`: {col_desc}" for col, col_desc in col_docs.items()
             )
-            parts.append(f"**Table: `{tbl}`** — {base_desc}\n{col_lines}")
+            args = meta.get("args", {})
+            if args:
+                args_str = ", ".join(f"{k}={v}" for k, v in args.items())
+                parts.append(
+                    f"**Table: `{tbl}`** — {base_desc}\n{col_lines}\n"
+                    f"*(Fetched with parameters: {args_str})*"
+                )
+            else:
+                parts.append(f"**Table: `{tbl}`** — {base_desc}\n{col_lines}")
         table_docs = "\n\n".join(parts)
 
     if not areas:
@@ -87,6 +95,18 @@ def render_system_prompt(
             f"* **{a['name']}** (code: `{a['code']}`): {len(a['tracts'])} census tracts"
             for a in areas
         )
+
+    logger.info(
+        "\n%s PROMPT INJECTIONS %s\n"
+        "[DYNAMIC_LOCAL_TABLES]\n%s\n\n"
+        "[RESOLVED_AREAS]\n%s\n"
+        "%s",
+        "=" * 40,
+        "=" * 40,
+        table_docs,
+        area_lines,
+        "=" * 99,
+    )
 
     return SYSTEM_PROMPT_TEMPLATE.replace("{DYNAMIC_LOCAL_TABLES}", table_docs).replace(
         "{RESOLVED_AREAS}", area_lines
@@ -208,7 +228,7 @@ def handle_dynamic_tool(
             if tbl not in new_tables:
                 new_tables.append(tbl)
             if tbl not in new_table_meta:
-                new_table_meta[tbl] = {"tool_name": tool_name}
+                new_table_meta[tbl] = {"tool_name": tool_name, "args": extra_args}
             created.append(f"Appended {len(df)} rows to `{tbl}` (area={area['name']})")
     content_parts: list[str] = []
     if created:
