@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+
+if TYPE_CHECKING:
+    from datetime import datetime
+    from pathlib import Path
 
 
 def _extract_text(content: str | list) -> str:

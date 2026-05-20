@@ -76,7 +76,7 @@ if __name__ == "__main__":
         "available_table_meta": {},
     }
 
-    started_at = datetime.now()
+    started_at = datetime.now().astimezone()
     history_file: Path | None = None
     save_history_dir = os.environ.get("SAVE_HISTORY")
     if save_history_dir:
