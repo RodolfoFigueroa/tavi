@@ -21,6 +21,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel<7",
+    "pre-commit>=4.6.0",
 ]
 
 [tool.uv.sources]
