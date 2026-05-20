@@ -9,6 +9,13 @@ _WRITE_OPS_RE = re.compile(
     r"\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER)\b", re.IGNORECASE
 )
 
+# DuckDB table functions that read from the filesystem or network.
+_EXTERNAL_READ_RE = re.compile(
+    r"\b(read_csv|read_csv_auto|read_parquet|read_json|read_json_auto"
+    r"|read_text|scan_csv|scan_parquet|glob)\s*\(",
+    re.IGNORECASE,
+)
+
 _AREA_MAP: dict[str, str] = {
     "Mexico City": "09.1.01",
     "Monterrey": "19.1.01",
@@ -32,6 +39,8 @@ def execute_spatial_query(sql: str, config: RunnableConfig) -> str:
     """
     if _WRITE_OPS_RE.search(sql):
         return "Error: Only SELECT queries are permitted."
+    if _EXTERNAL_READ_RE.search(sql):
+        return "Error: External file access is not permitted."
     thread_id: str = config["configurable"]["thread_id"]
     conn = get_session(thread_id)
     try:
