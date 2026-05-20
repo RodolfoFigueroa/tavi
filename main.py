@@ -11,6 +11,18 @@ def run_turn(
     config: dict,
     seen_ids: set[str],
 ) -> None:
+    """Stream a single conversation turn and print new messages.
+
+    Streams events from the LangGraph app, deduplicates messages by ID,
+    pretty-prints each new message, and logs the current ``areas`` and
+    ``available_tables`` state summary.
+
+    Args:
+        stream_inputs: Input dict passed directly to ``app.stream()``.
+        config: LangGraph run configuration (e.g. containing ``thread_id``).
+        seen_ids: Mutable set of already-printed message IDs used to
+            avoid reprinting messages emitted in earlier events.
+    """
     for event in app.stream(stream_inputs, config=config, stream_mode="values"):  # ty:ignore[invalid-argument-type]
         last_message = event["messages"][-1]
         msg_id = getattr(last_message, "id", None)
