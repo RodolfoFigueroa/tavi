@@ -16,7 +16,7 @@ SYSTEM_PROMPT_TEMPLATE = load_prompt_from_name("geo")
 def extract_area_node(state: AgentState) -> dict:
     """LangGraph node: extract and resolve geographic areas from the user message.
 
-    Invokes ``_geo_llm`` on the latest ``HumanMessage`` to identify area
+    Invokes ``geo_llm`` on the latest ``HumanMessage`` to identify area
     names via tool calls. Resolves each name to a metro area code,
     deduplicates against already-known areas in state, and returns the
     updated ``areas`` list.

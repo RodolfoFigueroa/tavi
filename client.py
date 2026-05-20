@@ -8,9 +8,11 @@ import sys
 
 import httpx
 
+TAVI_PORT = os.getenv("TAVI_PORT", "4175")
+
 
 def _get_base_url(args: argparse.Namespace) -> str:
-    return args.url or os.environ.get("TAVI_URL", "http://localhost:8000")
+    return args.url or os.environ.get("TAVI_URL", f"http://localhost:{TAVI_PORT}")
 
 
 def _get_api_key() -> str:
@@ -61,7 +63,7 @@ def main() -> None:
     parser.add_argument(
         "--url",
         metavar="URL",
-        help="Server base URL (default: $TAVI_URL or http://localhost:8000)",
+        help=f"Server base URL (default: $TAVI_URL or http://localhost:{TAVI_PORT})",
     )
     args = parser.parse_args()
 

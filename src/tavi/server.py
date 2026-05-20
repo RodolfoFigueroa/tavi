@@ -67,6 +67,14 @@ async def _cleanup_idle_sessions() -> None:
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):  # noqa: ANN201
+    """Manage application startup and shutdown lifecycle.
+
+    Starts the background idle-session cleanup task on startup. On shutdown,
+    cancels that task and closes all open DuckDB sessions.
+
+    Yields:
+        Control to the FastAPI application while it is running.
+    """
     cleanup_task = asyncio.create_task(_cleanup_idle_sessions())
     yield
     cleanup_task.cancel()
@@ -83,6 +91,15 @@ app.add_middleware(SlowAPIMiddleware)
 
 @app.exception_handler(RateLimitExceeded)
 async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:  # noqa: ARG001
+    """Return a 429 JSON response when a rate limit is exceeded.
+
+    Args:
+        request: The incoming HTTP request (unused, required by FastAPI).
+        exc: The rate-limit exception raised by SlowAPI.
+
+    Returns:
+        A ``JSONResponse`` with status 429 and a human-readable detail message.
+    """
     return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={"detail": "Rate limit exceeded. Please slow down."},
@@ -105,7 +122,12 @@ class MessageRequest(BaseModel):
 
 @app.post("/conversations", status_code=status.HTTP_201_CREATED)
 async def create_conversation(_: auth.APIKeyDep) -> dict:
-    """Create a new conversation and return its thread ID."""
+    """Create a new conversation and return its thread ID.
+
+    Returns:
+        A dict with a single key ``thread_id`` containing the UUID string
+        of the newly created conversation.
+    """
     thread_id = str(uuid.uuid4())
     now = datetime.now().astimezone()
     auth.register_thread(thread_id)
@@ -128,6 +150,14 @@ async def send_message(
     - ``{"type": "token", "content": "..."}`` — one per streamed token
     - ``{"type": "done"}`` — emitted once after the graph finishes
     - ``{"type": "error", "detail": "..."}`` — emitted if an exception occurs
+
+    Args:
+        thread_id: ID of an existing conversation, as returned by
+            ``POST /conversations``.
+        body: Request body containing the user's message ``content``.
+
+    Returns:
+        A ``StreamingResponse`` with media type ``text/event-stream``.
     """
     auth.verify_thread_exists(thread_id)
     _last_activity[thread_id] = datetime.now().astimezone()
@@ -186,7 +216,15 @@ async def send_message(
 
 @app.get("/conversations/{thread_id}/history")
 async def get_history(thread_id: str, _: auth.APIKeyDep) -> Response:
-    """Return the conversation history as a Markdown document."""
+    """Return the conversation history as a Markdown document.
+
+    Args:
+        thread_id: ID of the conversation whose history to fetch.
+
+    Returns:
+        A ``Response`` with media type ``text/markdown`` containing the
+        formatted conversation history.
+    """
     auth.verify_thread_exists(thread_id)
     config = {"configurable": {"thread_id": thread_id}}
     state = await graph.aget_state(config)  # ty: ignore[invalid-argument-type]
