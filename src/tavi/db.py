@@ -1,12 +1,22 @@
 import os
 import re
+import threading
+from pathlib import Path
+from urllib.parse import quote_plus
 
 import duckdb
 import pandas as pd
 
 _sessions: dict[str, duckdb.DuckDBPyConnection] = {}
+_sessions_lock = threading.Lock()
 
 _SAFE_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+# Install extensions once per process; LOAD is still required per connection.
+with duckdb.connect() as _tmp:
+    _tmp.execute("INSTALL postgres; INSTALL spatial;")
+
+_DEMOGRAPHICS_VIEW_SQL = (Path(__file__).parents[2] / "config" / "view.sql").read_text()
 
 
 def get_session(thread_id: str) -> duckdb.DuckDBPyConnection:
@@ -14,7 +24,7 @@ def get_session(thread_id: str) -> duckdb.DuckDBPyConnection:
 
     On first access, installs and loads the ``postgres`` and ``spatial``
     extensions, then attaches the Postgres database specified by the
-    ``DATABASE_URL`` environment variable as ``pg_db``.
+    ``POSTGRES_*`` environment variables as ``pg_db``.
 
     Args:
         thread_id: Unique identifier for the conversation thread. Used as the
@@ -23,15 +33,39 @@ def get_session(thread_id: str) -> duckdb.DuckDBPyConnection:
     Returns:
         A live DuckDB connection with the Postgres database attached.
     """
-    if thread_id not in _sessions:
-        conn = duckdb.connect()
-        conn.execute("INSTALL postgres; LOAD postgres;")
-        conn.execute("INSTALL spatial; LOAD spatial;")
-        conn.execute(
-            f"ATTACH '{os.environ['DATABASE_URL']}' AS pg_db (TYPE postgres, READ_ONLY)"
-        )
-        _sessions[thread_id] = conn
+    with _sessions_lock:
+        if thread_id not in _sessions:
+            conn = duckdb.connect()
+            conn.execute("LOAD postgres;")
+            conn.execute("LOAD spatial;")
+            user = quote_plus(os.environ["POSTGRES_USER"])
+            password = quote_plus(os.environ["POSTGRES_PASSWORD"])
+            host = os.environ["POSTGRES_HOST"]
+            port = os.environ["POSTGRES_PORT"]
+            db = os.environ["POSTGRES_DB"]
+            conn.execute(
+                f"ATTACH 'postgresql://{user}:{password}@{host}:{port}/{db}'"
+                " AS pg_db (TYPE postgres, READ_ONLY)"
+            )
+            conn.execute(_DEMOGRAPHICS_VIEW_SQL)
+            _sessions[thread_id] = conn
     return _sessions[thread_id]
+
+
+def close_session(thread_id: str) -> None:
+    """Close and remove the DuckDB session for the given thread.
+
+    Closes the DuckDB connection (which also releases the attached PostgreSQL
+    connection) and removes it from the session cache. Safe to call if the
+    session does not exist.
+
+    Args:
+        thread_id: Unique identifier for the conversation thread.
+    """
+    with _sessions_lock:
+        conn = _sessions.pop(thread_id, None)
+    if conn is not None:
+        conn.close()
 
 
 def write_dataframe(

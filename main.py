@@ -5,6 +5,7 @@ from pathlib import Path
 
 from langchain_core.messages import HumanMessage
 
+from tavi.db import close_session
 from tavi.history import save_history
 from tavi.workflow import app
 
@@ -66,7 +67,7 @@ if __name__ == "__main__":
         "messages": [
             HumanMessage(
                 content=(
-                    "Is there a correlation between tree coverage and surface temperature in Mexico City?"
+                    "Is there a correlation between tree coverage and surface temperature in Monterrey?"
                 )
             )
         ],
@@ -111,3 +112,5 @@ if __name__ == "__main__":
             started_at=started_at,
             include_tools=include_tools,
         )
+
+    close_session(config["configurable"]["thread_id"])

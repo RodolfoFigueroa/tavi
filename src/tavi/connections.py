@@ -18,6 +18,8 @@ lyra_client = LyraAPIClient(
 )
 
 
-engine = sqlalchemy.create_engine(os.environ["DATABASE_URL"])
+engine = sqlalchemy.create_engine(
+    f"postgresql://{os.environ['POSTGRES_USER']}:{os.environ['POSTGRES_PASSWORD']}@{os.environ['POSTGRES_HOST']}:{os.environ['POSTGRES_PORT']}/{os.environ['POSTGRES_DB']}"
+)
 
 base_llm = ChatAnthropic(model="claude-sonnet-4-6")  # ty:ignore[missing-argument, unknown-argument]
