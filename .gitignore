@@ -222,3 +222,4 @@ __marimo__/
 # Extra
 *.ipynb
 history/
+.DS_Store
