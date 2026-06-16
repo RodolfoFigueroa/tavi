@@ -3,7 +3,7 @@ import os
 
 import sqlalchemy
 from langchain_anthropic import ChatAnthropic
-from lyra_api import LyraAPIClient
+from lyra.api import LyraAPIClient
 
 LYRA_HOST = os.environ.get("LYRA_HOST", "localhost:5219")
 lyra_client = LyraAPIClient(
