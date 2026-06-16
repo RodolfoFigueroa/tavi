@@ -4,7 +4,7 @@ Este documento presenta el MVP desde una perspectiva institucional y de producto
 
 ## 1. Resumen ejecutivo
 
-El MVP permite que una persona haga preguntas en español sobre indicadores territoriales, sociales y urbanos, y reciba una respuesta clara basada en datos verificables. Cuando la pregunta tiene una dimensión geográfica, la herramienta también puede actualizar un mapa dinámico en directo para mostrar la región, las geometrías y la visualización temática correspondiente. La herramienta se implementará en el Centro para el Futuro de las Ciudades y utilizará datos, metodologías analíticas y criterios producidos por el propio Centro.
+El MVP permite que una persona haga preguntas en español sobre indicadores territoriales, sociales y urbanos, y reciba una respuesta clara basada en datos verificables. La herramienta se implementará en el Centro para el Futuro de las Ciudades y utilizará datos, metodologías analíticas y criterios producidos por el propio Centro.
 
 Su función será apoyar proyectos y plataformas existentes del Centro, incorporando una capa conversacional que ayude a personas no expertas a entender información urbana compleja sin tener que aprender conceptos técnicos o pedir análisis manuales para cada pregunta.
 
@@ -12,7 +12,7 @@ La propuesta combina tres elementos clave para crear valor institucional: acceso
 
 ## 2. Problema y oportunidad
 
-El Centro para el Futuro de las Ciudades produce datos, metodologías e indicadores que ayudan a entender fenómenos urbanos complejos. Sin embargo, cuando esa información llega a plataformas públicas o de consulta general, muchas personas no expertas pueden tener dificultad para interpretar tablas, indicadores, mapas o conceptos técnicos.
+El Centro para el Futuro de las Ciudades produce datos, metodologías e indicadores que ayudan a entender fenómenos urbanos complejos. Sin embargo, cuando esa información llega a plataformas públicas o de consulta general, muchas personas no expertas pueden tener dificultad para interpretar tablas, indicadores o conceptos técnicos.
 
 La oportunidad es crear una capa inteligente entre las plataformas del Centro y sus usuarios finales. Esta capa permitiría que una persona común explore información territorial con preguntas naturales, sin tener que aprender conceptos técnicos, sin conocer la estructura interna de los datos y sin recibir respuestas desconectadas de las metodologías del Centro.
 
@@ -23,7 +23,7 @@ Para el Centro, el valor está en convertir capacidades analíticas existentes e
 El MVP busca demostrar los siguientes beneficios:
 
 1. Acceso más claro: traducir indicadores técnicos a respuestas entendibles para personas no expertas.
-2. Visualización inmediata: conectar las respuestas con mapas que se actualizan automáticamente según la consulta del usuario.
+2. Entrega de datos puros: conectar las respuestas narrativas con un payload de datos estructurados (JSON) utilizable por las plataformas.
 3. Mayor adopción: permitir que usuarios de plataformas existentes consulten datos complejos con preguntas en lenguaje natural.
 4. Seguridad operativa: limitar el sistema a consultas de lectura sobre datos autorizados.
 5. Trazabilidad: conservar la pregunta, la consulta ejecutada y los resultados para auditoría.
@@ -37,19 +37,17 @@ El flujo esperado para el usuario es directo:
 2. El sistema identifica el área geográfica, los conceptos relevantes y el proyecto del Centro al que pertenece la consulta.
 3. El asistente prepara una consulta controlada sobre las vistas de datos autorizadas para esa plataforma.
 4. Antes de consultar la base, el sistema revisa que la solicitud sea segura y que solo lea información permitida.
-5. Si la consulta es válida, se ejecuta y se devuelve una respuesta clara, acompañada con una síntesis de los resultados estadísticos.
-6. Si la consulta requiere una visualización espacial, el mapa se actualiza automáticamente: puede moverse hacia la región consultada, ajustar el acercamiento y mostrar geometrías en una capa temática, como un mapa coroplético.
+5. Si la consulta es válida, se ejecuta en DuckDB en memoria y se devuelve una respuesta clara, acompañada con una síntesis de los resultados estadísticos.
 
 Si el sistema detecta una solicitud insegura, ambigua o fuera del alcance del MVP, la bloquea o solicita reformularla sin exponer detalles internos de la base de datos.
 
 ## 5. Qué datos puede consultar
 
-El MVP está pensado para trabajar con información territorial y urbana previamente preparada por el Centro de fuentes de datos públicas, incluyendo:
+El MVP está pensado para trabajar con información territorial y urbana descriptiva previamente preparada por el Centro:
 
 * Indicadores sociodemográficos y censales.
 * Datos agregados de económicos y financieros.
 * Índices de accesibilidad urbana a empleo y servicios esenciales.
-* Variables de contexto urbano, como uso de suelo, transporte o infraestructura.
 
 El asistente no consulta las tablas originales del sistema. Solo accede a vistas analíticas de lectura, diseñadas para exponer información útil sin abrir acceso innecesario a la estructura interna de datos o a metodologías que no correspondan al proyecto en curso.
 
@@ -73,17 +71,15 @@ El MVP no asume seguridad perfecta por declaración. La seguridad se validará c
 * Convertir preguntas de personas no expertas en consultas verificables.
 * Validar seguridad antes de ejecutar consultas.
 * Entregar una respuesta narrativa sustentada en resultados verificables.
-* Actualizar un mapa dinámico en directo cuando la consulta tenga una dimensión geográfica.
 * Generar estadísticas para comparar el desempeño de modelos comerciales y modelos de código abierto cuando sea necesario para decidir la estrategia de operación.
 
-**Lo que el MVP *no* puede hacer (todavía):**
+**Lo que el MVP *no* puede hacer:**
 
 * Editar, cargar o borrar datos desde la interfaz conversacional.
-* Ejecutar análisis predictivos avanzados.
+* Integrarse con brokers de mensajería (Redis) o disparar eventos de renderizado cartográfico en tiempo real.
+* Ejecutar análisis predictivos o proyecciones.
 * Consultar fuentes externas no autorizadas.
 * Permitir carga libre de archivos por parte del usuario.
-* Sustituir la validación final de expertos en decisiones de alto impacto.
-* Operar como producto independiente separado de las plataformas o proyectos del Centro.
 
 ## 8. Ejemplos de uso
 
@@ -99,20 +95,13 @@ El MVP no asume seguridad perfecta por declaración. La seguridad se validará c
 
 **Respuesta esperada:** El sistema devuelve una comparación tabular y narrativa de los indicadores disponibles, destacando diferencias relevantes sin inventar información fuera de los datos.
 
-**Pregunta:** "¿Cuál es la temperatura promedio por AGEB en la Ciudad de México?"
-
-**Respuesta esperada:** El sistema calcula o recupera el indicador autorizado, desplaza el mapa hacia la Ciudad de México, ajusta el nivel de acercamiento y muestra las AGEB en un mapa coroplético.
-
 ## 9. Métricas de éxito del MVP
 
 El éxito del MVP se evaluará con métricas claras:
 
-* Precisión de respuestas: porcentaje de preguntas del conjunto de prueba respondidas correctamente frente a resultados validados por expertos.
-* Claridad para usuarios no expertos: porcentaje de respuestas comprendidas correctamente en pruebas con usuarios de las plataformas.
-* Tiempo de respuesta: duración promedio desde la pregunta del usuario hasta la entrega de la respuesta final.
-* Sincronización con mapa: porcentaje de consultas geográficas que actualizan correctamente la región, el acercamiento y la capa visual esperada.
-* Tasa de autocorrección: porcentaje de consultas con errores menores que el sistema logra corregir dentro del límite definido de reintentos.
-* Seguridad validada: bloqueo del 100% de los casos incluidos en la batería inicial de pruebas adversariales.
-* Viabilidad de integración: facilidad para incorporar la capacidad en más de una plataforma existente del Centro.
+* Precisión de la inferencia: El sistema se considerará exitoso si el modelo de código abierto (Qwen 2.5-Coder) logra una precisión de ejecución $\ge 85\%$ en los resultados tabulares devueltos, evaluado contra un conjunto de prueba estático (Golden Dataset) de 50 preguntas complejas redactadas y validadas en comparación con la línea base comercial (LLMs comerciales).
+* Tasa de autocorrección: Al menos el 80% de los errores sintácticos menores detectados en el primer intento deben ser resueltos de forma autónoma por el grafo agéntico en su segundo o tercer intento, respetando el límite estricto de 3 reintentos.
+* Efectividad del bloqueo: Garantía del 100% de efectividad en el rechazo y bloqueo de consultas maliciosas, destructivas o ajenas a comandos `SELECT` de solo lectura mediante el interceptor del AST antes de que toquen el motor DuckDB.
+* Tiempo de respuesta: Duración promedio menor a 10 segundos desde la formulación de la pregunta del usuario hasta la entrega del payload final de respuesta en condiciones normales de operación.
 
 El respaldo técnico de esta propuesta se encuentra en [arquitectura.md](arquitectura.md).

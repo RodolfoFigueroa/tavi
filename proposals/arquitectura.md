@@ -4,9 +4,9 @@ Este documento es el respaldo técnico del MVP descrito en [mvp.md](mvp.md). Su 
 
 ## 1. Alcance técnico y entorno de datos
 
-El MVP implementa un flujo agéntico que traduce consultas en lenguaje natural a sentencias SQL para DuckDB ejecutado en memoria. El sistema está diseñado para usuarios no técnicos de plataformas existentes del Centro, pero mantiene un ciclo de validación sintáctica, validación de seguridad y autocorrección antes de ejecutar cualquier consulta física. Cuando la consulta produce resultados geográficos, el sistema también puede publicar instrucciones para actualizar un mapa dinámico conectado a la plataforma.
+El MVP implementa un flujo agéntico que traduce consultas en lenguaje natural a sentencias SQL para DuckDB ejecutado en memoria. El sistema está diseñado para usuarios no técnicos de plataformas existentes del Centro, pero mantiene un ciclo de validación sintáctica, validación de seguridad y autocorrección antes de ejecutar cualquier consulta física.
 
-A nivel operativo, el sistema interactúa con un modelo de datos relacional y geoespacial que consolida variables sociodemográficas, censales, ingresos per cápita e índices de accesibilidad urbana a empleo y servicios esenciales producidos o curados por el Centro. La capa agéntica queda desacoplada de la capa de datos: DuckDB no expone tablas base al asistente, sino vistas analíticas de solo lectura definidas para cada plataforma o proyecto.
+A nivel operativo, el sistema interactúa con un modelo de datos relacional y geoespacial que consolida variables sociodemográficas, censales, ingresos per cápita e índices de accesibilidad urbana a empleo y servicios esenciales producidos o curados por el Centro. La capa agéntica queda desacoplada de la capa de datos: DuckDB no expone tablas base al asistente, sino vistas analíticas de solo lectura definidas para cada plataforma o proyecto. El resultado final entregado al backend consiste en una respuesta narrativa y un objeto de datos tabular estructurado.
 
 ## 2. Flujo agéntico protegido
 
@@ -18,7 +18,6 @@ El flujo se estructura como un grafo de trabajo con retroalimentación activa:
 * Validación sintáctica: la consulta se analiza con un parser SQL, como sqlglot. Si falla, el error se devuelve al agente generador para un ciclo de autocorrección.
 * Interceptor de seguridad: se valida que la consulta sea de lectura, que opere solo sobre vistas permitidas y que no use funciones bloqueadas.
 * Ejecución aislada y síntesis: una consulta aprobada se ejecuta en DuckDB y los resultados se pasan a un modelo de síntesis para generar una respuesta narrativa en español.
-* Actualización cartográfica: si los resultados incluyen una dimensión espacial, el sistema publica un mensaje para que el mapa ajuste región, acercamiento, geometrías y estilo visual.
 
 El ciclo de autocorrección tendrá un límite estricto de 3 reintentos antes de abortar de forma segura.
 
@@ -65,15 +64,7 @@ Para mejorar la comprensión de conceptos regionales, el sistema inyecta context
 
 Ejemplo conceptual: una expresión como "alta vulnerabilidad" debe mapearse a rangos definidos en el glosario, no a interpretaciones libres del modelo.
 
-## 6. Integración con mapa dinámico
-
-La herramienta cuenta con una capacidad de actualización cartográfica en vivo. Cuando una consulta del usuario produce resultados con geometrías o agregaciones espaciales, el backend publica un mensaje estructurado en formato JSON a través de un message broker (Redis) usando una arquitectura Pub/Sub.
-
-El mapa se conecta al broker, escucha los mensajes relevantes y procesa la información publicada para actualizar la vista. Por ejemplo, ante una pregunta como "¿cuál es la temperatura promedio por AGEB en la Ciudad de México?", el mapa puede hacer pan/zoom hacia la región, cargar las geometrías correspondientes y representar el indicador como un mapa coroplético.
-
-Esta integración se mantiene intencionalmente desacoplada del flujo conversacional: el asistente produce la respuesta y publica el evento cartográfico, mientras que el componente de mapa decide cómo renderizarlo dentro de la plataforma. De esta forma, se preserva la flexibilidad para adaptar la visualización a las necesidades de cada proyecto sin sobrecargar el modelo de inferencia con decisiones de diseño visual.
-
-## 7. Telemetría, logging y auditoría
+## 6. Telemetría, logging y auditoría
 
 Cada solicitud debe generar un identificador de traza que agrupe:
 
@@ -88,3 +79,13 @@ Cada solicitud debe generar un identificador de traza que agrupe:
 * Código de error, cuando aplique.
 
 Los logs deben estructurarse en JSON para facilitar auditoría, depuración y medición del desempeño del MVP.
+
+
+## 7. Métricas de éxito del MVP
+
+Se establecen tres métricas clave y medibles para validar la viabilidad de la arquitectura antes de su paso a producción:
+
+* Precisión de la inferencia: Ejecución automatizada sobre el Golden Dataset de 50 preguntas complejas de dominio regional. El modelo open-source (Qwen 2.5-Coder) debe alcanzar una precisión de ejecución $\ge 85\%$ en la coincidencia exacta de los resultados tabulares devueltos frente a la solución humana experta y el benchmark comercial (LLMs comerciales).
+* Tasa de autocorrección: Eficiencia del bucle circular en LangGraph $\ge 80\%$ en la resolución autónoma de excepciones sintácticas levantadas por el linter o DuckDB, aplicando un límite estricto de hasta 3 reintentos antes de disparar una respuesta controlada.
+* Efectividad del bloqueo: Tolerancia cero a vulnerabilidades. Efectividad del 100% en la interceptación y denegación de consultas maliciosas (ej. inyecciones SQL) u operaciones prohibidas detectadas a nivel de AST por sqlglot antes de ser enviadas a la memoria de DuckDB.
+* Tiempo de respuesta: Monitoreo del ciclo completo del grafo para mantener una latencia media por debajo de los 10 segundos en condiciones estándar de red e inferencia.
