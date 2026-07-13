@@ -49,9 +49,7 @@ async def _cleanup_idle_sessions() -> None:
         await asyncio.sleep(300)  # check every 5 minutes
         timeout = timedelta(minutes=timeout_minutes)
         now = datetime.now().astimezone()
-        expired = [
-            tid for tid, last in list(_last_activity.items()) if now - last > timeout
-        ]
+        expired = [tid for tid, last in list(_last_activity.items()) if now - last > timeout]
         for tid in expired:
             close_session(tid)
             auth.remove_thread(tid)
@@ -90,7 +88,9 @@ app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
-async def _rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:  # noqa: ARG001
+async def _rate_limit_handler(
+    request: Request, exc: RateLimitExceeded
+) -> JSONResponse:  # noqa: ARG001
     """Return a 429 JSON response when a rate limit is exceeded.
 
     Args:
@@ -173,6 +173,7 @@ async def send_message(
             "areas": [],
             "available_tables": [],
             "available_table_meta": {},
+            "retry_count": 0,
         }
     else:
         inputs = {"messages": [HumanMessage(content=body.content)]}

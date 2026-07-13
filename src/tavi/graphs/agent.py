@@ -59,9 +59,7 @@ def render_system_prompt(
                 "metropolitan_zone": "Name of the metropolitan zone (VARCHAR).",
             }
             if entry:
-                col_docs["cvegeo"] = entry.columns.get(
-                    "cvegeo", "Census tract code (VARCHAR)."
-                )
+                col_docs["cvegeo"] = entry.columns.get("cvegeo", "Census tract code (VARCHAR).")
                 if entry.add_area:
                     col_docs.update(
                         {
@@ -74,9 +72,7 @@ def render_system_prompt(
                     col_docs["value"] = entry.columns.get(entry.column_name, "")
                 for key in entry.extra_args_keys:
                     col_docs[key] = entry.extra_args_config[key].get("description", "")
-            col_lines = "\n".join(
-                f"* `{col}`: {col_desc}" for col, col_desc in col_docs.items()
-            )
+            col_lines = "\n".join(f"* `{col}`: {col_desc}" for col, col_desc in col_docs.items())
             args = meta.get("args", {})
             if args:
                 args_str = ", ".join(f"{k}={v}" for k, v in args.items())
@@ -284,9 +280,7 @@ def tools_node(state: AgentState, config: RunnableConfig) -> dict:
             )
 
         elif tool_name in _static_tool_registry:
-            result = _static_tool_registry[tool_name].invoke(
-                tool_call["args"], config=config
-            )
+            result = _static_tool_registry[tool_name].invoke(tool_call["args"], config=config)
             new_messages.append(ToolMessage(tool_call_id=call_id, content=str(result)))
 
         else:
@@ -297,8 +291,19 @@ def tools_node(state: AgentState, config: RunnableConfig) -> dict:
                 )
             )
 
+    # Increment retry_count if any tool result is a SQL execution error.
+    # Security rejections (starting with "Error:") do not count as retries
+    # because route_after_tools will terminate the turn immediately.
+    has_sql_error = any(
+        isinstance(m, ToolMessage) and m.content.startswith("SQL error:")
+        for m in new_messages
+        if isinstance(getattr(m, "content", None), str)
+    )
+    new_retry_count = state.get("retry_count", 0) + (1 if has_sql_error else 0)
+
     return {
         "messages": new_messages,
         "available_tables": new_tables,
         "available_table_meta": new_table_meta,
+        "retry_count": new_retry_count,
     }

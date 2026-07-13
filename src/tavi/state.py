@@ -12,3 +12,4 @@ class AgentState(TypedDict):
     areas: list[Area]
     available_tables: list[str]
     available_table_meta: dict[str, dict]
+    retry_count: int  # tracks SQL autocorrection attempts;
