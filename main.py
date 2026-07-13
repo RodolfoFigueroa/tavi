@@ -40,7 +40,9 @@ def run_turn(
         started_at: Conversation start time written into the history header.
         include_tools: When ``True``, tool result messages are included.
     """
-    for event in app.stream(stream_inputs, config=config, stream_mode="values"):  # ty:ignore[invalid-argument-type]
+    for event in app.stream(
+        stream_inputs, config=config, stream_mode="values"
+    ):  # ty:ignore[invalid-argument-type]
         last_message = event["messages"][-1]
         msg_id = getattr(last_message, "id", None)
         if msg_id in seen_ids:
@@ -50,8 +52,7 @@ def run_turn(
         last_message.pretty_print()
         area_names = [a["name"] for a in (event.get("areas") or [])]
         print(  # noqa: T201
-            f"  [state] areas={area_names} | "
-            f"available_tables={event.get('available_tables')}"
+            f"  [state] areas={area_names} | " f"available_tables={event.get('available_tables')}"
         )
         if history_file is not None and started_at is not None:
             save_history(
@@ -74,6 +75,7 @@ if __name__ == "__main__":
         "areas": [],
         "available_tables": [],
         "available_table_meta": {},
+        "retry_count": 0,
     }
 
     started_at = datetime.now().astimezone()
